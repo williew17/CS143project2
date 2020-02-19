@@ -129,7 +129,13 @@ object CS143Utils {
     */
   def getUdfFromExpressions(expressions: Seq[Expression]): ScalaUdf = {
     /* IMPLEMENT THIS METHOD */
-    null
+    var udf:ScalaUdf = null // you need to declare type so it knows that its a null representing a ScalaUDF
+    for (idx <- 0 until expressions.length) { // go through each expression
+      if (expressions.apply(idx).isInstanceOf[ScalaUdf]) { // if the expression is a ScalaUDF instance which is a subclass of expression
+        udf = expressions.apply(idx).asInstanceOf[ScalaUdf] // then we grab it as a ScalaUdf instance
+      }
+    }
+    udf
   }
 
   /**
@@ -225,12 +231,19 @@ object CachingIteratorGenerator {
 
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
-        false
+        input.hasNext
       }
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
-        null
+        if (input.hasNext) {
+          val row = input.next()
+          val key = cacheKeyProjection(row)
+          if (!cache.containsKey(key)) {
+            cache.put(key, udfProject(key))
+          }
+          Row.fromSeq(preUdfProjection(row) ++ cache.get(key) ++ postUdfProjection(row))
+        } else { null }
       }
     }
   }
@@ -239,11 +252,10 @@ object CachingIteratorGenerator {
 /**
   * This function takes an input iterator containing aggregate values and returns an iterator that properly assemble the
   * output row. The result is the concatenation of the aggregate result plus the related group data.
-  *
-  * @param resultExpressions
-  * @param inputSchema
-  * @return
   */
+  // @param resultExpressions
+  // @param inputSchema
+  // @return
 object AggregateIteratorGenerator {
   def apply(resultExpressions: Seq[Expression],
             inputSchema: Seq[Attribute]): (Iterator[(Row, AggregateFunction)] => Iterator[Row]) = input => {
@@ -253,7 +265,7 @@ object AggregateIteratorGenerator {
 
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
-        false
+        input.hasNext
       }
 
       def next() = {
