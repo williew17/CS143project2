@@ -237,13 +237,15 @@ object CachingIteratorGenerator {
       def next() = {
         /* IMPLEMENT THIS METHOD */
         if (input.hasNext) {
-          val row = input.next()
-          val key = cacheKeyProjection(row)
-          if (!cache.containsKey(key)) {
+          val row = input.next() // get the next row of our iterator
+          val key = cacheKeyProjection(row) // find what the cache key would be for the row
+          if (!cache.containsKey(key)) { // if we have not seen it before put it in the cache by evaluating
             cache.put(key, udfProject(key))
           }
-          Row.fromSeq(preUdfProjection(row) ++ cache.get(key) ++ postUdfProjection(row))
-        } else { null }
+          Row.fromSeq(preUdfProjection(row) ++ cache.get(key) ++ postUdfProjection(row)) // grab it from cache and concatenate as required.
+        } else {
+          throw new NoSuchElementException("no more rows to evaluate")
+        }
       }
     }
   }

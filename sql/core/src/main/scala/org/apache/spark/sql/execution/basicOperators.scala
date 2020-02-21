@@ -105,22 +105,20 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
     new Iterator[Row] {
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
-        if (current_iter == null) {
-          fetchNextPartition()
-        } else {
-          if (current_iter.hasNext) {
-            true
-          } else {
-            fetchNextPartition()
-          }
+        if (current_iter != null) { // if you are not looking at a null iterator currently
+          current_iter.hasNext // use that iterators function to see if there is a next object
+        } else { // else you have a null iterator
+          fetchNextPartition() // then return whatever happens when you try to fetch the next partition
         }
       }
-
+      // function below uses shortcircuiting again to ensure fetchNextPartition isnt called needlessly.
       def next() = {
         /* IMPLEMENT THIS METHOD */
-        if (current_iter.hasNext || fetchNextPartition()) {
-          current_iter.next()
-        } else { null }
+        if (current_iter.hasNext || fetchNextPartition()) { // if there is a next item or you can get the next one using fetchNextPartition
+          current_iter.next() // get it from our current iterator
+        } else {
+          throw new NoSuchElementException("no more data")
+        } // throw exception
       }
 
       /**
@@ -131,9 +129,9 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
         */
       private def fetchNextPartition(): Boolean  = {
         /* IMPLEMENT THIS METHOD */
-        if (partition_iter.hasNext) {
-          current_iter = cache_generator(partition_iter.next().getData())
-          current_iter.hasNext
+        if (partition_iter.hasNext) { // if we have more partitions to find
+          current_iter = cache_generator(partition_iter.next().getData()) // we reset our current_iter using the cache_generator on our next partition
+          current_iter.hasNext // return whether or not the current_iter has next
         }
         else { false }
       }
