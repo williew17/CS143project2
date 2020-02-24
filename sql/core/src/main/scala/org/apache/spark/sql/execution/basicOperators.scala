@@ -106,7 +106,7 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
         if (current_iter != null) { // if you are not looking at a null iterator currently
-          current_iter.hasNext // use that iterators function to see if there is a next object
+          current_iter.hasNext || fetchNextPartition()// use that iterators function to see if there is a next object
         } else { // else you have a null iterator
           fetchNextPartition() // then return whatever happens when you try to fetch the next partition
         }
@@ -118,7 +118,9 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
           current_iter.next() // get it from our current iterator
         } else {
           throw new NoSuchElementException("no more data")
-        } // throw exception
+        } // throw exception \
+
+
       }
 
       /**

@@ -55,7 +55,7 @@ case class SpillableAggregate(
 
   /** Physical aggregator generated from a logical expression.  */
 
-  private[this] val computedAggregates = aggregateExpressions.flatMap { agg =>
+  private[this] val aggregator: ComputedAggregate = aggregateExpressions.flatMap { agg =>
     agg.collect {
       case a: AggregateExpression =>
         ComputedAggregate(
@@ -63,9 +63,7 @@ case class SpillableAggregate(
           BindReferences.bindReference(a, child.output),
           AttributeReference(s"aggResult:$a", a.dataType, a.nullable)())
     }
-  }.toArray
-
-  private[this] val aggregator: ComputedAggregate = computedAggregates(0) // IMPLEMENT ME
+  }.apply(0) // IMPLEMENT ME
 
   /** Schema of the aggregate.  */
   private[this] val aggregatorSchema: AttributeReference = aggregator.resultAttribute // IMPLEMENT ME
@@ -133,12 +131,12 @@ case class SpillableAggregate(
 
       def hasNext() = {
         /* IMPLEMENT THIS METHOD */
-        false
+        aggregateResult.hasNext
       }
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
-        null
+        aggregateResult.next()
       }
 
       /**
@@ -148,7 +146,18 @@ case class SpillableAggregate(
         */
       private def aggregate(): Iterator[Row] = {
         /* IMPLEMENT THIS METHOD */
-        null
+        while (data.hasNext) { // iterate until there is no more data
+          var next_row = data.next() // get the next piece of data
+          val group_val = groupingProjection(next_row) // find its group by using the grouping Projection
+          var group_pot = currentAggregationTable(group_val) // see if that group val has already been used
+          // not in hashTable
+          if (group_pot == null) { // if its new then you create a new aggregator instance and add it into the current aggregation
+            group_pot = newAggregatorInstance()
+            currentAggregationTable.update(group_val, group_pot)
+          }
+          group_pot.update(next_row) // update the group with this information
+        }
+        AggregateIteratorGenerator(resultExpression, Seq(aggregatorSchema) ++ namedGroups.map(_._2))(currentAggregationTable.iterator)
       }
 
       /**
@@ -157,7 +166,7 @@ case class SpillableAggregate(
         * @return
         */
       private def spillRecord(group: Row, row: Row)  = {
-        /* IMPLEMENT THIS METHOD */
+
       }
 
       /**
