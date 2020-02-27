@@ -272,7 +272,7 @@ object AggregateIteratorGenerator {
 
       def next() = {
         /* IMPLEMENT THIS METHOD */
-        val result = new GenericMutableRow(1) // create something to hold answers
+        val result = new GenericMutableRow(size = 1) // create something to hold answers
         val (group_info, input_agg) = input.next() // get the next group and function from the input iterator
         result(0) = input_agg.eval(EmptyRow) // evaluate using the input
         val joined = new JoinedRow4(result, group_info)
